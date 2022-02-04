@@ -4,8 +4,6 @@ import datetime
 import itertools
 import os
 
-
-paths = []
 FLIGHT_PATHS = list()
 
 
@@ -32,13 +30,8 @@ def get_direct_flights(
             direct_flights.append([flight])
             flights.remove(flight)
 
-    origin_error = False
-    if origin not in origins:
-        origin_error = True
-
-    destination_error = False
-    if destination not in destinations:
-        destination_error = True
+    origin_error = True if origin not in origins else False
+    destination_error = True if destination not in destinations else False
 
     return direct_flights, flights, origin_error, destination_error
 
@@ -63,7 +56,7 @@ def dfs_search(graph, start, end, path=[]):
 
 
 def select_comfort_flights(connecting_flights: list):
-    comfort_fights = list()
+    comfort_flights = list()
 
     for flight_path in FLIGHT_PATHS:
         path_flights = list()
@@ -75,31 +68,31 @@ def select_comfort_flights(connecting_flights: list):
             path_flights.append(all_flights)
         possible_flights = list(itertools.product(*path_flights))
         for flight in possible_flights:
-            comfort_fight = check_flight_date(list(flight))
-            if comfort_fight:
-                comfort_fights.append(comfort_fight)
+            comfort_flight = check_flight_date(list(flight))
+            if comfort_flight:
+                comfort_flights.append(comfort_flight)
 
-    return comfort_fights
+    return comfort_flights
 
 
 def check_flight_date(flights: list, less=1, more=6):
     less = less * 3600
     more = more * 3600
     for number, flight in enumerate(flights):
-        n_n = number + 1
-        if n_n == len(flights):
+        next_number = number + 1
+        if next_number == len(flights):
             break
-        ar = flight['arrival']
-        dep = flights[n_n]['departure']
-        ar_datetime = datetime.datetime.strptime(
-            ar,
+        arrival_time = flight['arrival']
+        departure_time = flights[next_number]['departure']
+        arrival_datetime = datetime.datetime.strptime(
+            arrival_time,
             '%Y-%m-%dT%H:%M:%S',
         )
-        dep_datetime = datetime.datetime.strptime(
-            dep,
+        departure_datetime = datetime.datetime.strptime(
+            departure_time,
             '%Y-%m-%dT%H:%M:%S',
         )
-        delta = dep_datetime - ar_datetime
+        delta = departure_datetime - arrival_datetime
         if delta.total_seconds() < less or delta.total_seconds() > more:
             return None
     return flights
@@ -116,27 +109,27 @@ def generate_total_result(
         trip = dict()
         trip['flights'] = flight_set
         departure = flight_set[0]['departure']
-        total_f_price = float()
+        flight_set_price = float()
         arrival = None
         bags_allowed = list()
         for segment in flight_set:
             arrival = segment['arrival']
-            total_f_price += float(segment['base_price'])
+            flight_set_price += float(segment['base_price'])
             bags_allowed.append(int(segment['bags_allowed']))
-        trip['total_price'] = float(total_f_price)
+        trip['total_price'] = float(flight_set_price)
         trip['origin'] = origin
         trip['destination'] = destination
         total_bags = min(bags_allowed)
         trip['bags_allowed'] = total_bags
-        dep_datetime = datetime.datetime.strptime(
+        departure_datetime = datetime.datetime.strptime(
             departure,
             '%Y-%m-%dT%H:%M:%S',
         )
-        ar_datetime = datetime.datetime.strptime(
+        arrival_datetime = datetime.datetime.strptime(
             arrival,
             '%Y-%m-%dT%H:%M:%S',
         )
-        delta = ar_datetime - dep_datetime
+        delta = arrival_datetime - departure_datetime
         trip['travel_time'] = str(delta)
         trip['bags_count'] = bags_count
         if bags_count:
@@ -145,7 +138,7 @@ def generate_total_result(
             bags_price = 0.0
             for segment in flight_set:
                 bags_price += float(segment['bag_price']) * bags_count
-            trip['total_price'] = total_f_price + bags_price
+            trip['total_price'] = flight_set_price + bags_price
 
         total_result.append(trip)
     return total_result
@@ -185,8 +178,8 @@ def main(
 
     dfs_search(graf, origin, destination)
 
-    comfort_fights = select_comfort_flights(connecting_flights)
-    total_flights = direct_flights + comfort_fights
+    comfort_flights = select_comfort_flights(connecting_flights)
+    total_flights = direct_flights + comfort_flights
 
     total_result = generate_total_result(
         total_flights,
