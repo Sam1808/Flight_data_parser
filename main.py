@@ -173,13 +173,13 @@ def main(
                 Cannot find origin airport: {origin}
                 Please check and try again
                 ''')
-        exit()
+        raise KeyError
     elif destination_error:
         print(f'''
-                Cannot find destination airport: {origin}
+                Cannot find destination airport: {destination}
                 Please check and try again
                 ''')
-        exit()
+        raise KeyError
 
     graf = create_flights_graf(connecting_flights)
 
